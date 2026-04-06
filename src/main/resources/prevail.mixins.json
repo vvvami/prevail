@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.vami.prevail.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "prevail.refmap.json",
+  "mixins": [
+    "FoodDataMixin",
+    "PlayerMixin",
+    "LivingEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
