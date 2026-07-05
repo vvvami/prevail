@@ -9,13 +9,13 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 public class FoodDataMixin {
     @ModifyArg(method = "tick", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/entity/player/Player;heal(F)V", ordinal = 0))
-    private float setFoodHealing(float par1) {
+    private float prevail$foodHeal(float par1) {
         return 0.17f;
     }
 
     @ModifyArg(method = "tick", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/food/FoodData;addExhaustion(F)V", ordinal = 0))
-    private float setExhaustion(float par1) {
+    private float prevail$exhaustReduction(float par1) {
         return par1 / 6f;
     }
 }

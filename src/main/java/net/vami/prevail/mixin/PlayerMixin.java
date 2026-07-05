@@ -12,7 +12,7 @@ public class PlayerMixin {
     boolean prevail$allowCrit = false;
 
     @ModifyVariable(method = "attack", at = @At(value = "STORE"), name = "flag2")
-    private boolean changeCanCrit(boolean originalCanCrit) {
+    private boolean prevail$crit(boolean originalCanCrit) {
 
         return originalCanCrit && prevail$allowCrit;
     }
