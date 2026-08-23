@@ -1,4 +1,4 @@
-package net.vami.prevail.event;
+package net.vami.prevail.event.custom;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.event.entity.living.LivingEvent;

@@ -36,7 +36,7 @@ public class ModTags {
 
     public static class DamageTypes {
 
-        public static final TagKey<DamageType> MELEE = tag("melee");
+        public static final TagKey<DamageType> MELEE = tag("is_melee");
 
 
         private static TagKey<DamageType> tag(String name) {

@@ -1,6 +1,5 @@
 package net.vami.prevail.mixin;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
@@ -9,20 +8,22 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.ForgeMod;
 import net.vami.prevail.ModTags;
-import net.vami.prevail.Prevail;
-import net.vami.prevail.capability.PlayerCapability;
-import net.vami.prevail.util.CapabilityUtil;
+import net.vami.prevail.capability.MobCapability;
+import net.vami.prevail.util.CapUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
+    // this godforsaken shxtfest of a method has my head spinning
+    // and my neck cranked beyond repair. i just manually tweaked it till it worked.
+    // please dont make me change it.
+
     @ModifyVariable(method = "hurt", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;isSleeping()Z"), argsOnly = true )
-    private float prevail$distanceDmg(float originalAmount, DamageSource source, float amount) {
+    private float prevailDistDmg(float originalAmount, DamageSource source, float amount) {
         double distanceMultiplier = 2;
         float result;
         if (source.getEntity() == null) return originalAmount;
@@ -34,47 +35,42 @@ public abstract class LivingEntityMixin {
 
         double dist = sourcePlayer.position().distanceTo(targetEntity.position());
         double reachCalc = Math.max(0.1, dist) / Math.max(0.1, sourcePlayer.getAttributeValue(ForgeMod.ENTITY_REACH.get()));
+        // so basically if the player is more than 3/4s of the dist away
+        // the damage will quickly fall off, n it goes moot (i watched suits once)
         if (reachCalc <= 0.75) {
             result = (float) (originalAmount * (1 + (distanceMultiplier - 1) * (0.75 - (reachCalc))));
         } else {
             result = (float) (originalAmount / (1 + (distanceMultiplier - 1) * (3 * reachCalc - 1)));
         }
-        Prevail.LOGGER.debug("damage: " + result);
-        sourcePlayer.sendSystemMessage(Component.literal("damage: " + result));
         return result;
     }
 
-
+    // stops the stupid shield-use delay bullshxt
     @ModifyConstant(method = "isBlocking", constant = @Constant(intValue = 5))
-    private int prevail$shieldDelay(int constant) {
+    private int prevailShieldDelay(int constant) {
         return 0;
     }
-
-
 
     @Shadow protected ItemStack useItem;
     @Shadow protected int useItemRemaining;
 
+    // quick eating stuff, is currently x4 faster
     @Inject(method = "startUsingItem", at = @At("TAIL"))
-    private void prevail$chomp(InteractionHand hand, CallbackInfo ci) {
+    private void prevailChomp(InteractionHand hand, CallbackInfo ci) {
         LivingEntity self = (LivingEntity) (Object) this;
         ItemStack stack = this.useItem;
 
         if (stack.isEmpty()) return;
         if (!stack.isEdible()) return;
         if (!(self instanceof Player player)) return;
-
-        if (prevail$chompCondition(player)) {
+        // u gotta sneak for it to work
+        if (player.isCrouching()) {
             this.useItemRemaining = Math.max(1, Mth.ceil(this.useItemRemaining * 0.25F));
-            if (CapabilityUtil.checkCapability(player)) {
-               PlayerCapability capability = CapabilityUtil.getCapability(player);
-               capability.chomped.set(true);
-            }
-        }
-    }
 
-    @Unique
-    private static boolean prevail$chompCondition(Player player) {
-        return player.isCrouching();
+            MobCapability capability = CapUtil.getCap(player);
+            if (capability == null) return;
+
+            capability.setChomped(true);
+        }
     }
 }

@@ -6,8 +6,9 @@
   "refmap": "prevail.refmap.json",
   "mixins": [
     "FoodDataMixin",
-    "PlayerMixin",
-    "LivingEntityMixin"
+    "LivingEntityMixin",
+    "MobEffectMixin",
+    "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

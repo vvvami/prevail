@@ -1,13 +1,14 @@
-package net.vami.prevail.event;
+package net.vami.prevail.event.custom;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.fml.event.IModBusEvent;
 
 @Cancelable
-public class MaxHealIncreaseEvent extends LivingEvent {
+public class MaxHealDecreaseEvent extends LivingEvent {
     private float amount = 0;
-    public MaxHealIncreaseEvent(LivingEntity entity, float amount) {
+    public MaxHealDecreaseEvent(LivingEntity entity, float amount) {
         super(entity);
         this.amount = amount;
     }

@@ -1,28 +1,29 @@
-package net.vami.prevail.triggers;
+package net.vami.prevail.event;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHealEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.vami.prevail.Prevail;
-import net.vami.prevail.capability.PlayerCapability;
-import net.vami.prevail.event.MaxHealTriggerEvent;
-import net.vami.prevail.util.CapabilityUtil;
+import net.vami.prevail.capability.MobCapability;
+import net.vami.prevail.event.custom.MaxHealTriggerEvent;
+import net.vami.prevail.util.CapUtil;
 import net.vami.prevail.util.MaxHealUtil;
+
+import java.text.DecimalFormat;
 
 @Mod.EventBusSubscriber(modid = Prevail.MOD_ID)
 public class ModMaxHealEvents {
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void maxHealTick(TickEvent.PlayerTickEvent event) {
         if (event.player.level().isClientSide()) return;
 
@@ -30,27 +31,21 @@ public class ModMaxHealEvents {
         if (event.phase == TickEvent.Phase.START
         && player.tickCount % 10 == 0) {
             player.displayClientMessage(
-                    Component.literal("Maxheal: " + MaxHealUtil.get(player)),
+                    Component.literal("Maxheal: " + new DecimalFormat("##.##").format(MaxHealUtil.get(player))),
                     true);
         }
-    }
+    }*/
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void maxHealRestrict(LivingHealEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
-        if (event.getEntity() instanceof Player player
-        && CapabilityUtil.checkCapability(player)) {
-            PlayerCapability capability = CapabilityUtil.getCapability(player);
-
-            // increases maxHeal based on stuff like instant health
-            if (event.getAmount() > 1) {
-                capability.maxHeal.set(capability.maxHeal.get() + event.getAmount() / 10);
-            }
+        if (event.getEntity() instanceof Player player) {
+            MobCapability capability = CapUtil.getCap(player);
+            if (capability == null) return;
 
             // restricts healing if it goes beyond maxHeal
-            if (player.getHealth() + event.getAmount()
-            > capability.maxHeal.get()) {
+            if (player.getHealth() + event.getAmount() > capability.getMaxHeal()) {
 
                 // trigger the event
                 MaxHealTriggerEvent triggerEvent = new MaxHealTriggerEvent(player);
@@ -58,8 +53,9 @@ public class ModMaxHealEvents {
                 if (triggerEvent.isCanceled()) {
                     return;
                 }
+
+                player.setHealth(capability.getMaxHeal());
                 event.setCanceled(true);
-                Prevail.LOGGER.debug("no healing! maxheal: " + capability.maxHeal.get());
             }
         }
     }
@@ -69,38 +65,44 @@ public class ModMaxHealEvents {
         if (event.getEntity().level().isClientSide()) return;
 
         if (!(event.getEntity() instanceof Player player)) return;
-        if (CapabilityUtil.checkCapability(player)) {
-            PlayerCapability capability = CapabilityUtil.getCapability(player);
-            if (capability.maxHeal.get() > 0) return;
-            capability.maxHeal.set(player.getMaxHealth());
-            Prevail.LOGGER.info("max heal: " + capability.maxHeal.get());
-        }
+
+        MobCapability capability = CapUtil.getCap(player);
+        if (capability == null) return;
+
+        if (capability.getMaxHeal() > 0) return;
+        capability.setMaxHeal(player.getMaxHealth());
+        Prevail.LOGGER.info("max heal: " + capability.getMaxHeal());
+
     }
 
+    // resets maxheal on death
     @SubscribeEvent
     public static void maxHealOnDeath(LivingDeathEvent event) {
         if (event.getEntity().level().isClientSide()) return;
         if (!(event.getEntity() instanceof Player player)) return;
-        if (CapabilityUtil.checkCapability(player)) {
-            PlayerCapability capability = CapabilityUtil.getCapability(player);
-            capability.maxHeal.set(0f);
-        }
+
+        MobCapability capability = CapUtil.getCap(player);
+        if (capability == null) return;
+
+        capability.setMaxHeal(0f);
     }
 
+    // when u take damage u take some perma loss to ur HP
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void maxHealDecrease(LivingHurtEvent event) {
+    public static void maxHealDecrease(LivingDamageEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
         float amount = event.getAmount();
         if (amount < 1) return;
 
-        if (event.getEntity() instanceof Player player
-        && CapabilityUtil.checkCapability(player)) {
-            float result = amount / Math.max(1, player.getArmorValue());
-            result = (float) Math.sqrt(result);
-            PlayerCapability capability = CapabilityUtil.getCapability(player);
+        if (event.getEntity() instanceof Player player) {
+            MobCapability capability = CapUtil.getCap(player);
+            if (capability == null) return;
 
-            MaxHealUtil.set(capability, player, capability.maxHeal.get() - result);
+            // this means that taking five hearts of dmg
+            // result in one heart of perma lost health
+            float result = amount / 5;
+            MaxHealUtil.set(capability, player, capability.getMaxHeal() - result);
         }
     }
 
@@ -111,14 +113,15 @@ public class ModMaxHealEvents {
 
         Player player = event.player;
         if (event.phase == TickEvent.Phase.START) {
-            if (player.hasEffect(MobEffects.REGENERATION)
-                    && CapabilityUtil.checkCapability(player)) {
+            if (player.hasEffect(MobEffects.REGENERATION)) {
 
-                PlayerCapability capability = CapabilityUtil.getCapability(player);
+                MobCapability capability = CapUtil.getCap(player);
+                if (capability == null) return;
+
                 // make diff configurable
                 float diff = 0.01f;
                 diff *= player.getEffect(MobEffects.REGENERATION).getAmplifier() + 1;
-                MaxHealUtil.set(capability, player, capability.maxHeal.get() + diff);
+                MaxHealUtil.set(capability, player, capability.getMaxHeal() + diff);
             }
         }
     }

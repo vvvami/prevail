@@ -9,11 +9,11 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 @Mixin(Player.class)
 public class PlayerMixin {
     @Unique
-    boolean prevail$allowCrit = false;
+    boolean prevailAllowCrit = false; // this just in case i want my own condition
 
     @ModifyVariable(method = "attack", at = @At(value = "STORE"), name = "flag2")
-    private boolean prevail$crit(boolean originalCanCrit) {
+    private boolean prevailCrit(boolean originalCanCrit) {
 
-        return originalCanCrit && prevail$allowCrit;
+        return originalCanCrit && prevailAllowCrit;
     }
 }

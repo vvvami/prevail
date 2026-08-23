@@ -12,6 +12,9 @@ import net.vami.prevail.ModTags;
 
 public class CombatUtil {
     public static final float SWEEP = 0.848F;
+
+    // im including the target in these because we might want to negotiate
+    // what really counts as "melee", including distance check and the like
     public static boolean isMelee(DamageSource source, LivingEntity target) {
 
         return source.is(ModTags.DamageTypes.MELEE)
@@ -39,5 +42,5 @@ public class CombatUtil {
 
     public static boolean isSweep(Player player) {
         return player.getAttackStrengthScale(0.5f) > SWEEP;
-    }
+    } // as defined by vanilla, for some reason????
 }
