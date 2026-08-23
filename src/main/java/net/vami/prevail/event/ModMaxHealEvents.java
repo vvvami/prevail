@@ -23,6 +23,7 @@ import java.text.DecimalFormat;
 @Mod.EventBusSubscriber(modid = Prevail.MOD_ID)
 public class ModMaxHealEvents {
 
+    // this is for personal testing/debugging purposes
     /*@SubscribeEvent
     public static void maxHealTick(TickEvent.PlayerTickEvent event) {
         if (event.player.level().isClientSide()) return;
@@ -36,9 +37,13 @@ public class ModMaxHealEvents {
         }
     }*/
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    // commented this out cause i thought maybe a mixin would be better
+    // FoodDataMixin.java :)
+    /*@SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void maxHealRestrict(LivingHealEvent event) {
         if (event.getEntity().level().isClientSide()) return;
+
+        if (event.getAmount() > 1) return;
 
         if (event.getEntity() instanceof Player player) {
             MobCapability capability = CapUtil.getCap(player);
@@ -58,7 +63,7 @@ public class ModMaxHealEvents {
                 event.setCanceled(true);
             }
         }
-    }
+    }*/
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void maxHealOnJoin(EntityJoinLevelEvent event) {
