@@ -18,33 +18,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
 
-    // this godforsaken shxtfest of a method has my head spinning
-    // and my neck cranked beyond repair. i just manually tweaked it till it worked.
-    // please dont make me change it.
-
-    @ModifyVariable(method = "hurt", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;isSleeping()Z"), argsOnly = true )
-    private float prevailDistDmg(float originalAmount, DamageSource source, float amount) {
-        double distanceMultiplier = 2;
-        float result;
-        if (source.getEntity() == null) return originalAmount;
-
-        if (!(source.getEntity() instanceof Player sourcePlayer) || !source.is(ModTags.DamageTypes.MELEE)) return originalAmount;
-
-        LivingEntity targetEntity = (LivingEntity) (Object) this;
-        if (targetEntity == null) return originalAmount;
-
-        double dist = sourcePlayer.position().distanceTo(targetEntity.position());
-        double reachCalc = Math.max(0.1, dist) / Math.max(0.1, sourcePlayer.getAttributeValue(ForgeMod.ENTITY_REACH.get()));
-        // so basically if the player is more than 3/4s of the dist away
-        // the damage will quickly fall off, n it goes moot (i watched suits once)
-        if (reachCalc <= 0.75) {
-            result = (float) (originalAmount * (1 + (distanceMultiplier - 1) * (0.75 - (reachCalc))));
-        } else {
-            result = (float) (originalAmount / (1 + (distanceMultiplier - 1) * (3 * reachCalc - 1)));
-        }
-        return result;
-    }
-
     // stops the stupid shield-use delay bullshxt
     @ModifyConstant(method = "isBlocking", constant = @Constant(intValue = 5))
     private int prevailShieldDelay(int constant) {

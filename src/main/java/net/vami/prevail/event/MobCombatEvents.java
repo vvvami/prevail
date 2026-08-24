@@ -6,13 +6,16 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -48,7 +51,7 @@ public class MobCombatEvents {
     }
 
     @SubscribeEvent
-    public static void staggerOnHit(LivingAttackEvent event) {
+    public static void staggerOnHit(LivingHurtEvent event) {
         if (event.getEntity().level().isClientSide()) return;
 
         if (!(event.getSource().is(ModTags.DamageTypes.MELEE)
@@ -66,8 +69,7 @@ public class MobCombatEvents {
 
         if (capability.getPoise() <= 0) {
             resetPoise(capability, target);
-            capability.setStagger(60);
-
+            capability.setStagger(50);
         }
     }
 
@@ -93,10 +95,7 @@ public class MobCombatEvents {
         if (capability == null) return;
 
         if (capability.getStagger() > 0) {
-            mob.setNoAi(!mob.isNoAi());
-
-            mob.getNavigation().stop();
-            mob.goalSelector.getRunningGoals().forEach(WrappedGoal::stop);
+            disableAI(mob);
 
             mob.xxa = 0;
             mob.zza = 0;
@@ -104,14 +103,16 @@ public class MobCombatEvents {
             if (mob.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.CRIT,
                         (mob.getX()), (mob.getY() + mob.getBbHeight() / 2), (mob.getZ()),
-                        5,
+                        capability.getStagger() / 6,
                         (mob.getBbWidth() / 3), (mob.getBbHeight() / 3), (mob.getBbWidth() / 3),
                         0.05);
             }
 
-            mob.setNoAi(!mob.isNoAi());
-
             capability.setStagger(capability.getStagger() - 1);
+
+            if (capability.getStagger() <= 0) {
+                enableAI(mob);
+            }
         }
     }
 
@@ -129,5 +130,35 @@ public class MobCombatEvents {
 
     private static void resetPoise(MobCapability capability, LivingEntity entity) {
         capability.setPoise(entity.getMaxHealth() / 2);
+    }
+
+    public static void disableAI(Mob mob) {
+        mob.getNavigation().stop();
+
+        mob.goalSelector.disableControlFlag(Goal.Flag.MOVE);
+        mob.goalSelector.disableControlFlag(Goal.Flag.LOOK);
+        mob.goalSelector.disableControlFlag(Goal.Flag.JUMP);
+        mob.goalSelector.disableControlFlag(Goal.Flag.TARGET);
+
+        mob.targetSelector.disableControlFlag(Goal.Flag.MOVE);
+        mob.targetSelector.disableControlFlag(Goal.Flag.LOOK);
+        mob.targetSelector.disableControlFlag(Goal.Flag.JUMP);
+        mob.targetSelector.disableControlFlag(Goal.Flag.TARGET);
+
+        if (mob instanceof Creeper creeper) {
+            creeper.setSwellDir(-1);
+        }
+    }
+
+    public static void enableAI(Mob mob) {
+        mob.goalSelector.enableControlFlag(Goal.Flag.MOVE);
+        mob.goalSelector.enableControlFlag(Goal.Flag.LOOK);
+        mob.goalSelector.enableControlFlag(Goal.Flag.JUMP);
+        mob.goalSelector.enableControlFlag(Goal.Flag.TARGET);
+
+        mob.targetSelector.enableControlFlag(Goal.Flag.MOVE);
+        mob.targetSelector.enableControlFlag(Goal.Flag.LOOK);
+        mob.targetSelector.enableControlFlag(Goal.Flag.JUMP);
+        mob.targetSelector.enableControlFlag(Goal.Flag.TARGET);
     }
 }

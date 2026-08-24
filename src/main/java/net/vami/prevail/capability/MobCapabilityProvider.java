@@ -10,8 +10,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MobCapabilityProvider
-        implements ICapabilitySerializable<CompoundTag> {
+public class MobCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
 
     public static final Capability<MobCapability> CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
 

@@ -9,17 +9,16 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.ForgeMod;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.ShieldBlockEvent;
+import net.minecraftforge.event.entity.living.*;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
@@ -30,6 +29,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.vami.prevail.ModTags;
 import net.vami.prevail.Prevail;
 import net.vami.prevail.capability.MobCapability;
 import net.vami.prevail.util.CapUtil;
@@ -39,6 +39,35 @@ import java.util.List;
 
 @Mod.EventBusSubscriber(modid = Prevail.MOD_ID)
 public class PlayerCombatEvents {
+
+    // this godforsaken shxtfest of a method has my head spinning
+    // and my neck cranked beyond repair. i just manually tweaked it till it worked.
+    // please dont make me change it.
+    // moved from Mixin to event!
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void distanceDmg(LivingHurtEvent event) {
+        DamageSource source = event.getSource();
+        double distanceMultiplier = 2;
+        float originalAmount = event.getAmount();
+        float result;
+        if (source.getEntity() == null) return;
+
+        if (!(source.getEntity() instanceof Player sourcePlayer)
+                || !source.is(ModTags.DamageTypes.MELEE)) return;
+
+        LivingEntity target = event.getEntity();
+
+        double dist = sourcePlayer.position().distanceTo(target.position());
+        double reachCalc = Math.max(0.1, dist) / Math.max(0.1, sourcePlayer.getAttributeValue(ForgeMod.ENTITY_REACH.get()));
+        // so basically if the player is more than a portion of the dist away
+        // the damage will quickly fall off, n it goes moot (i watched suits once)
+        if (reachCalc <= 0.65) {
+            result = (float) (originalAmount * (1 + (distanceMultiplier - 1) * (0.75 - (reachCalc))));
+        } else {
+            result = (float) (originalAmount / (1 + (distanceMultiplier - 1) * (3 * reachCalc - 1)));
+        }
+        event.setAmount(result);
+    }
 
     // allows sleep all times of day
     @SubscribeEvent
