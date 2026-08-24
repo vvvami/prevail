@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "mob_attack",
+    "player_attack",
+    "mob_attack_no_aggro"
+  ]
+}
