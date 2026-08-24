@@ -17,33 +17,23 @@ public class FoodDataMixin {
     // how you can instantly heal like four hearts from eating a steak
     // what kinda magical fxcking steak is that
 
-    @Shadow
-    private float saturationLevel;
+    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;heal(F)V"))
+    private void prevailNaturalHeal(Player player, float amount) {
+        MobCapability capability = CapUtil.getCap(player);
+        if (capability == null) return;
 
-    // maxheal enforcement
-    @ModifyVariable(method = "tick", at = @At("STORE"), name = "flag")
-    private boolean prevailNaturalRegen(boolean originalValue, Player pPlayer) {
+        float remaining = capability.getMaxHeal() - player.getHealth();
 
-        MobCapability capability = CapUtil.getCap(pPlayer);
-        if (capability == null) return originalValue;
+        if (amount > remaining) {
+            MaxHealTriggerEvent event = new MaxHealTriggerEvent(player);
+            MinecraftForge.EVENT_BUS.post(event);
 
-        float healAmount = Math.min(saturationLevel, 6.0F) / 6;
-
-        // restricts healing if it goes beyond maxHeal
-        if (pPlayer.getHealth() + healAmount > capability.getMaxHeal()) {
-
-            // trigger the event
-            MaxHealTriggerEvent triggerEvent = new MaxHealTriggerEvent(pPlayer);
-            MinecraftForge.EVENT_BUS.post(triggerEvent);
-            if (triggerEvent.isCanceled()) {
-                return originalValue;
+            if (!event.isCanceled()) {
+                amount = Math.max(0, remaining);
             }
-
-            pPlayer.heal(capability.getMaxHeal() - pPlayer.getHealth());
-            return false;
         }
 
-        return originalValue;
+        player.heal(amount);
     }
 
     @Unique
