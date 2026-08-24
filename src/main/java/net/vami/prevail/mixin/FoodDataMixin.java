@@ -12,41 +12,32 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(FoodData.class)
 public class FoodDataMixin {
     // this is meant to reduce natural healing, cause currently, its bullshxt
     // how you can instantly heal like four hearts from eating a steak
     // what kinda magical fxcking steak is that
+    // renamed capability -> data
+    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;heal(F)V"))
+    private void prevailNaturalHeal(Player player, float amount) {
+        MobData data = DataUtil.getData(player);
 
-    @Shadow
-    private float saturationLevel;
+        float remaining = data.getMaxHeal() - player.getHealth();
 
-    // maxheal enforcement
-    @ModifyVariable(method = "tick", at = @At("STORE"), name = "flag")
-    private boolean prevailNaturalRegen(boolean originalValue, Player pPlayer) {
+        if (amount > remaining) {
+            MaxHealTriggerEvent event = new MaxHealTriggerEvent(player);
+            NeoForge.EVENT_BUS.post(event);
 
-        MobData capability = DataUtil.getData(pPlayer);
-        if (capability == null) return originalValue;
-
-        float healAmount = Math.min(saturationLevel, 6.0F) / 6;
-
-        // restricts healing if it goes beyond maxHeal
-        if (pPlayer.getHealth() + healAmount > capability.getMaxHeal()) {
-
-            // trigger the event
-            MaxHealTriggerEvent triggerEvent = new MaxHealTriggerEvent(pPlayer);
-            NeoForge.EVENT_BUS.post(triggerEvent);
-            if (triggerEvent.isCanceled()) {
-                return originalValue;
+            if (!event.isCanceled()) {
+                amount = Math.max(0, remaining);
             }
-
-            pPlayer.heal(capability.getMaxHeal() - pPlayer.getHealth());
-            return false;
         }
 
-        return originalValue;
+        player.heal(amount);
     }
+
 
     @Unique
     private float amount = 6f; // it unique so it shouldnt have a problem right?

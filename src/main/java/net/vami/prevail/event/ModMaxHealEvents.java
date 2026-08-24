@@ -70,8 +70,6 @@ public class ModMaxHealEvents {
 
         if (data.getMaxHeal() > 0) return;
         data.setMaxHeal(player.getMaxHealth());
-        Prevail.LOGGER.info("max heal: " + data.getMaxHeal());
-
     }
 
     // resets maxheal on death
