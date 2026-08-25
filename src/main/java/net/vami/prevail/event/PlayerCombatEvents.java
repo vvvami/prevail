@@ -102,15 +102,15 @@ public class PlayerCombatEvents {
     }
 
     // restores up to 80% of maxheal after sleep
+    // renaming "capability" to "data" for convenience's sake
     @SubscribeEvent
     public static void onPlayerSlept(PlayerWakeUpEvent event) {
         Player player = event.getEntity();
 
-        MobData capability = DataUtil.getData(player);
-        if (capability == null) return;
+        MobData data = DataUtil.getData(player);
 
-        if (capability.getMaxHeal() < player.getMaxHealth() * 0.8f) {
-            capability.setMaxHeal(player.getMaxHealth() * 0.8f);
+        if (data.getMaxHeal() < player.getMaxHealth() * 0.8f) {
+            data.setMaxHeal(player.getMaxHealth() * 0.8f);
         }
     }
 
@@ -233,6 +233,31 @@ public class PlayerCombatEvents {
         }
     }
 
+    // this exists because there's an annoying thing that happens
+    // when you eat with a shield while sprinting, you can sometimes
+    // rush without meaning to. this is made to prevent that.
+    @SubscribeEvent
+    public static void shieldRushWaiting(LivingEntityUseItemEvent.Finish event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        ItemStack item = event.getItem();
+        if (item.getFoodProperties(player) == null) return;
+
+        MobData data = DataUtil.getData(player);
+        data.setShieldRushWait(7);
+    }
+
+    // the timer for the method above so it fades out
+    // and you can shield rush again
+    @SubscribeEvent
+    public static void shieldRushWaitTimer(PlayerTickEvent.Pre event) {
+        Player player = event.getEntity();
+
+        MobData data = DataUtil.getData(player);
+        if (data.getShieldRushWait() > 0) {
+            data.setShieldRushWait(data.getShieldRushWait() - 1);
+        }
+    }
 
     // si tienes que correr, hazlo!
     // renaming "capability" to "data" for convenience's sake
@@ -242,6 +267,7 @@ public class PlayerCombatEvents {
             Player player = event.getEntity();
 
             MobData data = DataUtil.getData(player);
+            if (data.getShieldRushWait() > 0) return;
 
             if (player.isBlocking()
                     && player.isSprinting()

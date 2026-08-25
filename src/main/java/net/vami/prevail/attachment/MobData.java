@@ -4,8 +4,11 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
+// this is replacing the forge 1.20.1 Capability
+// honestly i wish forge had this instead of Capabilities
+// it's so much simpler
 public class MobData implements INBTSerializable<CompoundTag> {
-    // youll find that these are separated n that's because
+    // you'll find that these are separated n that's because
     // they actually apply for mobs, not players
     private float poise;
     private int stagger;
@@ -13,6 +16,7 @@ public class MobData implements INBTSerializable<CompoundTag> {
     // these below apply to players only
     private float maxHeal;
     private int shieldRush;
+    private int shieldRushWait; // no shield rush right after eating
     private boolean chomped;
     private int despair;
 
@@ -48,6 +52,14 @@ public class MobData implements INBTSerializable<CompoundTag> {
         this.shieldRush = shieldRush;
     }
 
+    public int getShieldRushWait() {
+        return shieldRushWait;
+    }
+
+    public void setShieldRushWait(int shieldRushWait) {
+        this.shieldRushWait = shieldRushWait;
+    }
+
     public boolean hasChomped() {
         return chomped;
     }
@@ -71,6 +83,7 @@ public class MobData implements INBTSerializable<CompoundTag> {
         this.maxHeal = source.maxHeal;
         this.chomped = source.chomped;
         this.shieldRush = source.shieldRush;
+        this.shieldRushWait = source.shieldRushWait;
         this.despair = source.despair;
     }
 
@@ -83,6 +96,7 @@ public class MobData implements INBTSerializable<CompoundTag> {
 
         tag.putFloat("MaxHeal", maxHeal);
         tag.putInt("ShieldRush", shieldRush);
+        tag.putInt("ShieldRushWait", shieldRushWait);
         tag.putBoolean("Chomped", chomped);
         tag.putInt("Despair", despair);
 
@@ -97,6 +111,7 @@ public class MobData implements INBTSerializable<CompoundTag> {
 
         maxHeal = tag.getFloat("MaxHeal");
         shieldRush = tag.getInt("ShieldRush");
+        shieldRushWait = tag.getInt("ShieldRushWait");
         chomped = tag.getBoolean("Chomped");
         despair = tag.getInt("Despair");
     }
