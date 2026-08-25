@@ -228,7 +228,7 @@ public class PlayerCombatEvents {
 
         MobCapability capability = CapUtil.getCap(player);
         if (capability == null) return;
-        capability.setShieldRushWait(7);
+        capability.setShieldRushWait(15);
     }
 
     // the timer for the method above so it fades out
