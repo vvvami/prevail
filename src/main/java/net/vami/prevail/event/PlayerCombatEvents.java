@@ -244,7 +244,7 @@ public class PlayerCombatEvents {
         if (item.getFoodProperties(player) == null) return;
 
         MobData data = DataUtil.getData(player);
-        data.setShieldRushWait(7);
+        data.setShieldRushWait(15);
     }
 
     // the timer for the method above so it fades out
