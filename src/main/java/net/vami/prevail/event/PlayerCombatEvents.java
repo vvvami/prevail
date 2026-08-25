@@ -216,6 +216,35 @@ public class PlayerCombatEvents {
         }
     }
 
+    // this exists because there's an annoying thing that happens
+    // when you eat with a shield while sprinting, you can sometimes
+    // rush without meaning to. this is made to prevent that.
+    @SubscribeEvent
+    public static void shieldRushWaiting(LivingEntityUseItemEvent.Finish event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        ItemStack item = event.getItem();
+        if (item.getFoodProperties(player) == null) return;
+
+        MobCapability capability = CapUtil.getCap(player);
+        if (capability == null) return;
+        capability.setShieldRushWait(7);
+    }
+
+    // the timer for the method above so it fades out
+    // and you can shield rush again
+    @SubscribeEvent
+    public static void shieldRushWaitTimer(TickEvent.PlayerTickEvent event) {
+        Player player = event.player;
+
+        MobCapability capability = CapUtil.getCap(player);
+        if (capability == null) return;
+
+        if (capability.getShieldRushWait() > 0) {
+            capability.setShieldRushWait(capability.getShieldRushWait() - 1);
+        }
+    }
+
 
     // si tienes que correr, hazlo!
     @SubscribeEvent
@@ -225,6 +254,7 @@ public class PlayerCombatEvents {
 
             MobCapability capability = CapUtil.getCap(player);
             if (capability == null) return;
+            if (capability.getShieldRushWait() > 0) return;
 
             if (player.isBlocking()
                     && player.isSprinting()

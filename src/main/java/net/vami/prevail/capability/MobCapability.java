@@ -11,6 +11,7 @@ public class MobCapability {
     // these below apply to players only
     private float maxHeal;
     private int shieldRush;
+    private int shieldRushWait; // no shield rush right after eating
     private boolean chomped;
     private int despair;
 
@@ -46,6 +47,14 @@ public class MobCapability {
         this.shieldRush = shieldRush;
     }
 
+    public int getShieldRushWait() {
+        return shieldRushWait;
+    }
+
+    public void setShieldRushWait(int shieldRushWait) {
+        this.shieldRushWait = shieldRushWait;
+    }
+
     public boolean hasChomped() {
         return chomped;
     }
@@ -69,6 +78,7 @@ public class MobCapability {
         this.maxHeal = source.maxHeal;
         this.chomped = source.chomped;
         this.shieldRush = source.shieldRush;
+        this.shieldRushWait = source.shieldRushWait;
         this.despair = source.despair;
     }
 
@@ -80,6 +90,7 @@ public class MobCapability {
 
         tag.putFloat("MaxHeal", maxHeal);
         tag.putInt("ShieldRush", shieldRush);
+        tag.putInt("ShieldRushWait", shieldRush);
         tag.putBoolean("Chomped", chomped);
         tag.putInt("Despair", despair);
 
@@ -92,6 +103,7 @@ public class MobCapability {
 
         maxHeal = tag.getFloat("MaxHeal");
         shieldRush = tag.getInt("ShieldRush");
+        shieldRushWait = tag.getInt("ShieldRushWait");
         chomped = tag.getBoolean("Chomped");
         despair = tag.getInt("Despair");
     }
