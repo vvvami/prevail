@@ -3,6 +3,7 @@ package net.vami.prevail.mixin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
 import net.neoforged.neoforge.common.NeoForge;
+import net.vami.prevail.PrevailConfig;
 import net.vami.prevail.attachment.MobData;
 import net.vami.prevail.event.custom.MaxHealTriggerEvent;
 import net.vami.prevail.util.DataUtil;
@@ -22,11 +23,13 @@ public class FoodDataMixin {
     // renamed capability -> data
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;heal(F)V"))
     private void prevailNaturalHeal(Player player, float amount) {
+
         MobData data = DataUtil.getData(player);
 
         float remaining = data.getMaxHeal() - player.getHealth();
 
-        if (amount > remaining) {
+        if (PrevailConfig.MAXHEAL_ENABLE.getAsBoolean() &&
+                amount > remaining) {
             MaxHealTriggerEvent event = new MaxHealTriggerEvent(player);
             NeoForge.EVENT_BUS.post(event);
 

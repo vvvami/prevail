@@ -9,7 +9,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -18,9 +17,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.common.*;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.*;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.CanContinueSleepingEvent;
@@ -28,6 +27,7 @@ import net.neoforged.neoforge.event.entity.player.CanPlayerSleepEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerWakeUpEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.vami.prevail.PrevailConfig;
 import net.vami.prevail.ModTags;
 import net.vami.prevail.Prevail;
 import net.vami.prevail.attachment.MobData;
@@ -60,7 +60,7 @@ public class PlayerCombatEvents {
         double reachCalc = Math.max(0.1, dist) / Math.max(0.1, sourcePlayer.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE));
         // so basically if the player is more than a portion of the dist away
         // the damage will quickly fall off, n it goes moot (i watched suits once)
-        if (reachCalc <= 0.65) {
+        if (reachCalc <= PrevailConfig.REACH_DIST_FALLOFF.getAsDouble()) {
             result = (float) (originalAmount * (1 + (distanceMultiplier - 1) * (0.75 - (reachCalc))));
         } else {
             result = (float) (originalAmount / (1 + (distanceMultiplier - 1) * (3 * reachCalc - 1)));
@@ -127,14 +127,14 @@ public class PlayerCombatEvents {
         if (!CombatUtil.isSweep(player)) {
             // make configurable
             // shield increases despair, because fxck shield abusers
-            int amount = player.getItemInHand(InteractionHand.OFF_HAND).getItem()
-                    == Items.SHIELD ? 2 : 1;
+            int amount = player.getItemInHand(InteractionHand.OFF_HAND).getItem() == Items.SHIELD
+                    ? PrevailConfig.DESPAIR_SHIELD_BUILDUP.getAsInt() : PrevailConfig.DESPAIR_BUILDUP.getAsInt();
 
             data.setDespair(data.getDespair() + amount);
         } else {
             // if ur sweeping, it means u relaxed
             // good job, have less despair
-            data.setDespair(Math.max(0, data.getDespair() - 2));
+            data.setDespair(Math.max(0, data.getDespair() - PrevailConfig.DESPAIR_SWEEP_REDUCTION.getAsInt()));
         }
     }
 
@@ -149,7 +149,7 @@ public class PlayerCombatEvents {
             MobData data = DataUtil.getData(player);
 
             // needa make it configurable
-            int despairThreshold = 7;
+            int despairThreshold = PrevailConfig.DESPAIR_THRESHOLD.getAsInt();
             if (data.getDespair() > despairThreshold) {
                 event.setCanceled(true); // you cannot spam. be calm. be relaxed.
             }
@@ -168,7 +168,7 @@ public class PlayerCombatEvents {
         if (player.tickCount % 20 == 0) {
             MobData data = DataUtil.getData(player);
 
-            data.setDespair(Math.max(0, data.getDespair() - 1));
+            data.setDespair(Math.max(0, data.getDespair() - PrevailConfig.DESPAIR_FADE.getAsInt()));
         }
     }
 
